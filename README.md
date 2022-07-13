@@ -37,3 +37,5 @@ docker run -it --rm \
 ## References
  - Alpine Asterisk package source: https://git.alpinelinux.org/cgit/aports/tree/main/asterisk
  - Asterisk in an Alpine Linux LXC container: https://paulgorman.org/technical/asterisk-alpine-lxc.txt
+ 
+ https://wiki.alpinelinux.org/wiki/Setting_up_Zaptel/Asterisk_on_Alpine
