@@ -39,3 +39,4 @@ docker run -it --rm \
  - Asterisk in an Alpine Linux LXC container: https://paulgorman.org/technical/asterisk-alpine-lxc.txt
  
  https://wiki.alpinelinux.org/wiki/Setting_up_Zaptel/Asterisk_on_Alpine
+ https://wiki.alpinelinux.org/wiki/Creating_an_Alpine_package
