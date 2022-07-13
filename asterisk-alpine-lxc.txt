@@ -1,0 +1,81 @@
+# Asterisk in an Alpine Linux LXC container #
+
+(January 2017)
+
+Create the container:
+
+	# lxc-create -n alpine-asterisk -t alpine -- -r v3.5
+	# lxc-start -n alpine-asterisk
+	# lxc-attach -n alpine-asterisk
+
+Some general setup:
+
+```
+# cat << EOF > /root/.profile
+# When using lxc-attach, do "su -" to trigger a login shell that runs .profile.
+export PS1='--- \h \w \\$ '
+export PAGER='less'
+alias l='ls'
+alias ll='ls -lah'
+alias la='ls -a'
+EOF
+# apk update
+# apk add tzdata s6
+# cp /usr/share/zoneinfo/America/Detroit /etc/localtime
+# echo 'America/Detroit' > /etc/timezone
+# apk del tzdata
+# rc-update add s6-svscan boot
+```
+
+Compile Asterisk:
+
+	# wget http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-13-current.tar.gz
+	# apk add build-base ncurses-dev util-linux-dev jansson-dev libxml2-dev sqlite sqlite-dev sqlite-libs bsd-compat-headers 
+	# cd /src/asterisk-13.13.1/
+	# ./configure
+	# make menuselect
+
+Add CORE-SOUNDS-EN-ULAW and CORE-SOUNDS-EN-G722 and MOH-OPSOUND-ULAW and MOH-OPSOUND-G722 and EXTRA-SOUNDS-EN-ULAW and EXTRA-SOUNDS-EN-G722. Then:
+
+	# make
+	# make install
+
+## musl patch ##
+
+If compilation fails with errors about GLOB_NOMAGIC and/or GLOB_BRACE in 'ael.flex', save the following as `asterisk-13.13.1/musl-glob-compat.patch`:
+
+	--- asterisk-11.7.0.orig/res/ael/ael.flex
+	+++ asterisk-11.7.0/res/ael/ael.flex
+	@@ -79,6 +79,12 @@
+	 #if !defined(GLOB_ABORTED)
+	 #define GLOB_ABORTED GLOB_ABEND
+	 #endif
+	+#if !defined(GLOB_BRACE)
+	+#define GLOB_BRACE 0
+	+#endif
+	+#if !defined(GLOB_NOMAGIC)
+	+#define GLOB_NOMAGIC 0
+	+#endif
+	 
+	 #include "asterisk/logger.h"
+	 #include "asterisk/utils.h"
+	Only in asterisk-11.7.0: res/ael/ael.tab.o
+	--- asterisk-11.7.0.orig/res/ael/ael_lex.c
+	+++ asterisk-11.7.0/res/ael/ael_lex.c
+	@@ -838,6 +838,12 @@
+	 #if !defined(GLOB_ABORTED)
+	 #define GLOB_ABORTED GLOB_ABEND
+	 #endif
+	+#if !defined(GLOB_BRACE)
+	+#define GLOB_BRACE 0
+	+#endif
+	+#if !defined(GLOB_NOMAGIC)
+	+#define GLOB_NOMAGIC 0
+	+#endif
+	 
+	 #include "asterisk/logger.h"
+	 #include "asterisk/utils.h"
+
+And then run before retrying `make`:
+
+	# patch -p1 < musl-glob-compat.patch
